@@ -1,10 +1,10 @@
 CREATE TABLE IF NOT EXISTS `lineorder` (
   `lo_orderkey` int(11) NOT NULL COMMENT "",
-  `lo_orderdate` int(11) NOT NULL COMMENT "",
   `lo_linenumber` int(11) NOT NULL COMMENT "",
   `lo_custkey` int(11) NOT NULL COMMENT "",
   `lo_partkey` int(11) NOT NULL COMMENT "",
   `lo_suppkey` int(11) NOT NULL COMMENT "",
+  `lo_orderdate` int(11) NOT NULL COMMENT "",
   `lo_orderpriority` varchar(16) NOT NULL COMMENT "",
   `lo_shippriority` int(11) NOT NULL COMMENT "",
   `lo_quantity` int(11) NOT NULL COMMENT "",
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `lineorder` (
   `lo_commitdate` int(11) NOT NULL COMMENT "",
   `lo_shipmode` varchar(11) NOT NULL COMMENT ""
 ) ENGINE=OLAP
-DUPLICATE KEY(`lo_orderkey`)
+DUPLICATE KEY(`lo_orderkey`,lo_linenumber,lo_custkey,lo_partkey,lo_suppkey,`lo_orderdate`)
 COMMENT "OLAP"
 PARTITION BY RANGE(`lo_orderdate`)
 (PARTITION p1 VALUES [("-2147483648"), ("19930101")),
@@ -29,6 +29,7 @@ PARTITION p6 VALUES [("19970101"), ("19980101")),
 PARTITION p7 VALUES [("19980101"), ("19990101")))
 DISTRIBUTED BY HASH(`lo_orderkey`) BUCKETS 48
 PROPERTIES (
+"replication_num" = "1",
 "colocate_with" = "groupa1",
 "in_memory" = "false"
 );
@@ -47,6 +48,7 @@ DUPLICATE KEY(`c_custkey`)
 COMMENT "OLAP"
 DISTRIBUTED BY HASH(`c_custkey`) BUCKETS 12
 PROPERTIES (
+"replication_num" = "1",
 "colocate_with" = "groupa2",
 "in_memory" = "false"
 );
@@ -75,6 +77,7 @@ DUPLICATE KEY(`d_datekey`)
 COMMENT "OLAP"
 DISTRIBUTED BY HASH(`d_datekey`) BUCKETS 1
 PROPERTIES (
+"replication_num" = "1",
 "in_memory" = "false",
 "colocate_with" = "groupa3"
 );
@@ -92,6 +95,7 @@ DUPLICATE KEY(`s_suppkey`)
 COMMENT "OLAP"
 DISTRIBUTED BY HASH(`s_suppkey`) BUCKETS 12
 PROPERTIES (
+"replication_num" = "1",
 "colocate_with" = "groupa4",
 "in_memory" = "false"
 );
@@ -111,6 +115,7 @@ DUPLICATE KEY(`p_partkey`)
 COMMENT "OLAP"
 DISTRIBUTED BY HASH(`p_partkey`) BUCKETS 12
 PROPERTIES (
+"replication_num" = "1",
 "colocate_with" = "groupa5",
 "in_memory" = "false"
 );

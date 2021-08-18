@@ -52,6 +52,5 @@ DISTRIBUTED BY HASH(`LO_ORDERKEY`) BUCKETS 48
 PROPERTIES (
 "replication_num" = "1",
 "colocate_with" = "groupxx1",
-"in_memory" = "false",
-"storage_format" = "DEFAULT"
+"in_memory" = "false"
 );

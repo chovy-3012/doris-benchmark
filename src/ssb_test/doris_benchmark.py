@@ -7,11 +7,11 @@ import os
 import subprocess
 import sys
 import time
+
 sys.path.append(".")
 
 import doris_lib
 import conf_parser
-
 
 MYSQLSLAP_RESULT_STR = "Average number of seconds to run all queries"
 
@@ -50,7 +50,7 @@ class DorisBenchmark(object):
         """
         for sql_dict in sql_list:
             sql_dict["index"] = int(sql_dict["file_name"][1:])
-        sql_list.sort(key = lambda x: x["index"])
+        sql_list.sort(key=lambda x: x["index"])
 
     def get_test_sql_dirs(self, sql_dirname):
         test_sql_dirs = []
@@ -88,6 +88,9 @@ class DorisBenchmark(object):
                 for concurrency_num in conf_parser.concurrency_num_list:
                     print("------ dataset: %s, concurrency: %s ------" % (sql_dir, concurrency_num))
                     print("sql\\time(ms)\parallel_num\t%s" % ("\t".join(conf_parser.parallel_num_list)))
+                    max_time_cost = 0
+                    min_time_cost = -1
+                    sum_time_cost = 0
                     for sql_dict in sql_list:
                         result = []
                         result.append(sql_dict["file_name"])
@@ -105,17 +108,28 @@ class DorisBenchmark(object):
                             end_time = time.time()
                             if res != 0 or (output and MYSQLSLAP_RESULT_STR not in output):
                                 print("exec sql error. sql: %s, output: \n%s" \
-                                    % (sql_dict["file_name"], output))
+                                      % (sql_dict["file_name"], output))
                                 result.append("-")
                             else:
-                                time_cost = (int(round(end_time * 1000)) - int(round(begin_time * 1000)))\
-                                    / int(1 if conf_parser.num_of_queries < int(concurrency_num)
-                                      else conf_parser.num_of_queries / int(concurrency_num))
+                                print(sql_dict["sql"])
+                                # print(output)
+                                time_cost = (int(round(end_time * 1000)) - int(round(begin_time * 1000))) \
+                                            / int(1 if conf_parser.num_of_queries < int(concurrency_num)
+                                                  else conf_parser.num_of_queries / int(concurrency_num))
                                 result.append(str(time_cost))
-                            time.sleep(int(conf_parser.sleep_ms)/1000.0)
-                            #print(begin_time, end_time, time_cost, output)
+
+                                if max_time_cost < time_cost:
+                                    max_time_cost = time_cost
+                                if min_time_cost == -1:
+                                    min_time_cost = time_cost
+                                if min_time_cost > time_cost:
+                                    min_time_cost = time_cost
+                                sum_time_cost += time_cost
+                            time.sleep(int(conf_parser.sleep_ms) / 1000.0)
+                            # print(begin_time, end_time, time_cost, output)
 
                         print("\t".join(result))
+                    print("min:%d,max:%d,avg:%d" % (min_time_cost, max_time_cost, (sum_time_cost / len(sql_list))))
         finally:
             self.close_doris()
 
@@ -147,7 +161,8 @@ class DorisBenchmark(object):
                     # get base result from file
                     base_result = self.lib.get_query_base_result(sql_dir, scale, sql_dict["file_name"])
                     if base_result is None:
-                        print("sql: %s, scale: %d. check result error, msg: base result file not exist" % (sql_dict["file_name"], scale))
+                        print("sql: %s, scale: %d. check result error, msg: base result file not exist" % (
+                            sql_dict["file_name"], scale))
                         continue
 
                     # diff query result
@@ -155,7 +170,7 @@ class DorisBenchmark(object):
                     query_result = query_res["result"]
                     if len(query_result) != len(base_result):
                         print("sql: %s. check result error, row count is different, base: %s, query: %s" \
-                                % (sql_dict["file_name"], len(base_result), len(query_result)))
+                              % (sql_dict["file_name"], len(base_result), len(query_result)))
                         continue
 
                     # row
@@ -169,7 +184,7 @@ class DorisBenchmark(object):
                         if normalize_line_str != base_result_line_str:
                             is_same = False
                             print("sql: %s. check result error, row content is different, base: (%s), query: (%s)" \
-                                % (sql_dict["file_name"], base_result_line_str, normalize_line_str))
+                                  % (sql_dict["file_name"], base_result_line_str, normalize_line_str))
                             break
                     if not is_same:
                         continue

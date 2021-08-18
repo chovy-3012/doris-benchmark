@@ -1,0 +1,5 @@
+*.o
+*.pyc
+output
+*.swp
+.idea
